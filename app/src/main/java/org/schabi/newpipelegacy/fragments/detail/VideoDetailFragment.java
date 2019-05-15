@@ -271,7 +271,7 @@ public class VideoDetailFragment
     public void onDestroyView() {
         if (DEBUG) Log.d(TAG, "onDestroyView() called");
         spinnerToolbar.setOnItemSelectedListener(null);
-        spinnerToolbar.setAdapter(null);
+        spinnerToolbar = null;
         super.onDestroyView();
     }
 
