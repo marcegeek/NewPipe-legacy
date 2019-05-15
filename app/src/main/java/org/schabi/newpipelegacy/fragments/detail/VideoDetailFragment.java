@@ -72,6 +72,8 @@ import org.schabi.newpipelegacy.local.dialog.PlaylistAppendDialog;
 import org.schabi.newpipelegacy.local.history.HistoryRecordManager;
 import org.schabi.newpipelegacy.player.MainVideoPlayer;
 import org.schabi.newpipelegacy.player.PopupVideoPlayer;
+import org.schabi.newpipelegacy.player.helper.PlayerHelper;
+import org.schabi.newpipelegacy.player.old.PlayVideoActivity;
 import org.schabi.newpipelegacy.player.playqueue.PlayQueue;
 import org.schabi.newpipelegacy.player.playqueue.SinglePlayQueue;
 import org.schabi.newpipelegacy.report.ErrorActivity;
@@ -84,9 +86,11 @@ import org.schabi.newpipelegacy.util.InfoCache;
 import org.schabi.newpipelegacy.util.ListHelper;
 import org.schabi.newpipelegacy.util.Localization;
 import org.schabi.newpipelegacy.util.NavigationHelper;
+import org.schabi.newpipelegacy.util.OnClickGesture;
 import org.schabi.newpipelegacy.util.PermissionHelper;
 import org.schabi.newpipelegacy.util.StreamItemAdapter;
 import org.schabi.newpipelegacy.util.StreamItemAdapter.StreamSizeWrapper;
+import org.schabi.newpipelegacy.util.ThemeHelper;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -887,7 +891,7 @@ public class VideoDetailFragment
                 .getBoolean(this.getString(R.string.use_external_video_player_key), false)) {
             startOnExternalPlayer(activity, currentInfo, selectedVideoStream);
         } else {
-            openNormalPlayer();
+            openNormalPlayer(selectedVideoStream);
         }
     }
 
@@ -900,13 +904,24 @@ public class VideoDetailFragment
         }
     }
 
-    private void openNormalPlayer() {
+    private void openNormalPlayer(VideoStream selectedVideoStream) {
         Intent mIntent;
-        final PlayQueue playQueue = new SinglePlayQueue(currentInfo);
-        mIntent = NavigationHelper.getPlayerIntent(activity,
-                MainVideoPlayer.class,
-                playQueue,
-                getSelectedVideoStream().getResolution());
+        boolean useOldPlayer = PlayerHelper.isUsingOldPlayer(activity) || (Build.VERSION.SDK_INT < 16);
+        if (!useOldPlayer) {
+            // ExoPlayer
+            final PlayQueue playQueue = new SinglePlayQueue(currentInfo);
+            mIntent = NavigationHelper.getPlayerIntent(activity,
+                    MainVideoPlayer.class,
+                    playQueue,
+                    getSelectedVideoStream().getResolution());
+        } else {
+            // Internal Player
+            mIntent = new Intent(activity, PlayVideoActivity.class)
+                    .putExtra(PlayVideoActivity.VIDEO_TITLE, currentInfo.getName())
+                    .putExtra(PlayVideoActivity.STREAM_URL, selectedVideoStream.getUrl())
+                    .putExtra(PlayVideoActivity.VIDEO_URL, currentInfo.getUrl())
+                    .putExtra(PlayVideoActivity.START_POSITION, currentInfo.getStartPosition());
+        }
         startActivity(mIntent);
     }
 
